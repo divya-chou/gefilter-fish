@@ -5,6 +5,8 @@ from flask import jsonify
 from flaskexample import app
 from flaskexample.model import print_topics, in_db
 
+import pandas as pd
+
 #------------------------------------------------------------------------------
 @app.route('/')
 @app.route('/index')
@@ -17,12 +19,13 @@ def index():
 #------------------------------------------------------------------------------
 @app.route('/topics', methods=['POST'])
 def topic_page():
+    ''' Display an example of topics extracted from some reviews '''
 
-    topics, polarities, reviews = print_topics("0972683275")
+    topics, reviews = print_topics("0972683275")
 
     outputs = []
-    for topic, polarity in zip(topics, polarities):
-        outputs.append(dict(topic=topic, polarity=polarity))
+    for topic, review in zip(topics, reviews):
+        outputs.append(dict(topic=topic, polarity=review['sentiment']))
 
     return render_template('topics.html',outputs=outputs)
 #------------------------------------------------------------------------------
@@ -30,13 +33,12 @@ def topic_page():
 #------------------------------------------------------------------------------
 @app.route('/reviews', methods=['POST'])
 def reviews_page():
-    import pandas as pd
+    ''' Render page showing summarized reviews '''
 
     # grab product information
     topic_id = int(request.args.to_dict()['topic'])
     title    = request.args.to_dict()['title']
-    product  = dict(productName=title,
-                    topicWords=topics[topic_id])
+    product  = dict(productName=title, topicWords=topics[topic_id])
 
     # grab the reviews for this topic
     reviews_df = pd.DataFrame(reviews)
@@ -49,23 +51,31 @@ def reviews_page():
 
 #------------------------------------------------------------------------------
 @app.route('/model', methods=['GET'])
-def return_topics():
-    '''Return topics extracted from reviews in our database'''
+def display_topics():
+    ''' Return topics extracted from reviews in our database '''
 
-    global topics, polarities, reviews
+    global topics, reviews
 
+    # get asin, topics, and reviews
     asin = request.args.get("asin")
-    topics, polarities, reviews = print_topics(asin)
+    topics, reviews = print_topics(asin)
 
-    # append emojis showing whether the sentiment
+    # append emojis showing the sentiment
     emoji_topics = []
-    for i, polarity in enumerate(polarities):
-        if polarity == "Bad":
-            emoji_topics.append("\uD83D\uDC4E - "+topics[i])
-        elif polarity == "Neutral":
-            emoji_topics.append("\uD83D\uDE10 - "+topics[i])
+    for topic_id, topic in enumerate(topics):
+
+        # grab the average sentiment
+        reviews_df = pd.DataFrame(reviews)
+        reviews_df = reviews_df[reviews_df['topic'] == topic_id]
+        polarity   = reviews_df['summary_sentiment'].mean()
+
+        # append emojis to topic name based on range of sentiment
+        if polarity <= -0.5:
+            emoji_topics.append("\uD83D\uDC4E - "+topic)
+        elif polarity > -0.5 and polarity < 0.5:
+            emoji_topics.append("\uD83D\uDE10 - "+topic)
         else:
-            emoji_topics.append("\uD83D\uDC4D - "+topics[i])
+            emoji_topics.append("\uD83D\uDC4D - "+topic)
 
     return jsonify(topic=emoji_topics)
 #------------------------------------------------------------------------------
@@ -73,7 +83,7 @@ def return_topics():
 #------------------------------------------------------------------------------
 @app.route('/in_db', methods=['GET'])
 def return_in_db():
-    '''Check if an ASIN is in our database'''
+    ''' Check if an ASIN is in our database '''
 
     asin = request.args.get("asin")
     return jsonify( in_db( asin ) )

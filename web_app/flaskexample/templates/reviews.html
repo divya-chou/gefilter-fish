@@ -45,13 +45,13 @@
         <p class="lead">Topic: {{ product.topicWords }}</p>
 
         <table class="table table-hover">
-        <tr><th>User</th><th>Review</th></tr>
+        <tr><th>User</th><th>Summarized Review</th></tr>
         {% for review in reviews %}
           <tr>
             <td>{{ review['reviewerName'] }}<br><br>
                 Rating: {{ review['overall'] }}/5.0
             </td>
-            <td>{{ review['reviewText'] }}</td>
+            <td>{{ review['summarized_reviewText'] }}</td>
           </tr>
         {% endfor %}
         </table>
