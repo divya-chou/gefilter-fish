@@ -192,7 +192,7 @@ def print_topics(test_asin):
     SYMBOLS = " ".join(string.punctuation).split(" ") + \
               ["-----", "---", "...", "“", "”", "'s"]
 
-    reviews_df = getDF('../data/reviews_Electronics_5_first1000.json')
+    reviews_df = getDF('data/reviews_Electronics_5_first1000.json')
 #    test_asin  = reviews_df['asin'].value_counts().idxmax()
     test_df    = reviews_df[reviews_df['asin'] == test_asin].dropna()
 
@@ -237,7 +237,7 @@ def print_topics(test_asin):
 #------------------------------------------------------------------------------
 def in_db(asin):
 
-    reviews_df = getDF('../data/reviews_Electronics_5_first1000.json')
+    reviews_df = getDF('data/reviews_Electronics_5_first1000.json')
 
     return asin in reviews_df['asin'].tolist()
 #------------------------------------------------------------------------------
