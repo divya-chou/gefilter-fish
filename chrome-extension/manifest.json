@@ -3,17 +3,19 @@
 
   "name": "Gefilter Fish",
   "description": "Cluster Amazon Reviews by Topics",
-  "version": "0.0.0.1",
+  "version": "0.0.0.4",
 
   "browser_action": {
     "name": "Gefilter Fish",
-    "icons": ["icon.png"],
-    "default_icon": "icon.png"
+    "icons": { "16": "icon16.png",
+               "48": "icon48.png",
+              "128": "icon128.png" },
+    "default_icon": "icon48.png"
   },
 
   "content_scripts": [ {
     "js": [ "jquery-3.2.1.min.js", "gefilterfish.js" ],
-    "matches": [ "http://*/*", "https://*/*"]
+    "matches": [ "https://*/*" ]
   }]
 
 }

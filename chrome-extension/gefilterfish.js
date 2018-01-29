@@ -1,27 +1,29 @@
 // Grab the ASIN and product title
 var asin         = document.getElementById("ASIN").value;
 var productTitle = document.getElementById("productTitle").innerText;
-console.log("doing something");
+
+console.log("Hello");
 
 // Check if ASIN is in our database
-$.get( "https://localhost:5000/in_db", { asin: asin })
+$.get( "https://localhost:5000/in_db", { asin: asin } )
   .done( function ( in_db ) {
 
+    console.log("In here");
+
     // If in the DB then modify the page
-    if (in_db) {
+    if ( in_db ) {
 
       // Grab the topics and add in the buttons
-      $.get( "https://localhost:5000/model", { asin: asin })
+      $.get( "https://localhost:5000/model", { asin: asin } )
         .done( function( data ) { 
 
         // Replace the title of the section
         $('h3[data-hook="lighthut-title"]').replaceWith('<h3 data-hook="lighthut-title" class="a-spacing-base">Topics in customer reviews</h3>');
      
           // Add in buttons
-          console.log("got here");
           $('.cr-lighthouse-terms').replaceWith('<div class="cr-lighthouse-terms">');
           for (var i = 0; i < data.topic.length; i++) {
-            $('.cr-lighthouse-terms').append('<form action="https://localhost:5000/reviews?topic='+i+'&title='+encodeURIComponent(productTitle)+'" method="post">'+
+            $('.cr-lighthouse-terms').append('<form target="_blank" action="https://localhost:5000/reviews?topic='+i+'&title='+encodeURIComponent(productTitle)+'" method="post">'+
                                                ' <button class="cr-lighthouse-term" name="topic'+i+' type="submit">'+data.topic[i]+'</button>'+
                                              '</form>');
           }

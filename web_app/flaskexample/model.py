@@ -9,11 +9,24 @@ from nltk.corpus import stopwords
 
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
+from sqlalchemy import create_engine
+from sqlalchemy_utils import database_exists, create_database
+import psycopg2
+
 import pandas as pd
 import numpy as np
 
 import string
 import spacy
+
+#------------------------------------------------------------------
+def unique(sequence):
+    '''get unique elements of list and keep the same order'''
+
+    seen = set()
+    return [x for x in sequence if not (x in seen or seen.add(x))]
+#------------------------------------------------------------------
+
 
 #------------------------------------------------------------------------------
 def parse(path):
@@ -110,10 +123,10 @@ def return_topics(vectorizer, clf, W, df, n_top_words, n_top_documents):
 
     # get list of feature names
     feature_names = vectorizer.get_feature_names()
-    
+
     # get VADER sentiment analyzer
-    analyser      = SentimentIntensityAnalyzer()    
-    
+    analyser      = SentimentIntensityAnalyzer()
+
     # list of topics, polarities  and reviews to return
     topics, reviews = [], []
 
@@ -124,14 +137,14 @@ def return_topics(vectorizer, clf, W, df, n_top_words, n_top_documents):
         word_list = []
         for i in topic.argsort()[:-n_top_words - 1:-1]:
             word_list.append(feature_names[i])
-        
+
         # split words in case there are some bigrams and get unique set
         split_list = []
         for word in word_list:
             for split in word.split():
                 split_list.append(split)
         topic_words = list(set(split_list))
-        
+
         # append topic words as a single string
         topics.append(' '.join([word for word in topic_words]))
 
@@ -142,11 +155,11 @@ def return_topics(vectorizer, clf, W, df, n_top_words, n_top_documents):
             # check that the review contains one of the topic words
             review = df['reviewText'].iloc[doc_index]
             if any(word in review.lower() for word in topic_words):
-                
+
                 # seniment analysis
                 vader = analyser.polarity_scores(review)
-                
-                # append current review with seniment and topic id to the list 
+
+                # append current review with seniment and topic id to the list
                 reviews.append(df.iloc[doc_index].to_dict())
                 reviews[-1]['topic']     = topic_id
                 reviews[-1]['sentiment'] = vader['compound']
@@ -160,7 +173,7 @@ def summarize_reviews(topics, reviews):
          do sentiment analysis just for those sentences '''
 
     # define sentiment analyzer
-    analyser = SentimentIntensityAnalyzer() 
+    analyser = SentimentIntensityAnalyzer()
 
     # loop over reviews and summarize content
     for i, review in enumerate(reviews):
@@ -170,12 +183,12 @@ def summarize_reviews(topics, reviews):
         for sentence in sentences:
             if any(word in sentence.lower() for word in topic_words):
                 summary.append(sentence)
-    
+
         # save info for summarized reviews
         reviews[i]['summarized_reviewText'] = ' '.join([sent for sent in summary])
         vader = analyser.polarity_scores(reviews[i]['summarized_reviewText'])
         reviews[i]['summary_sentiment']     = vader['compound']
-        
+
     return reviews
 #------------------------------------------------------------------------------
 
@@ -192,21 +205,41 @@ def print_topics(test_asin):
     SYMBOLS = " ".join(string.punctuation).split(" ") + \
               ["-----", "---", "...", "“", "”", "'s"]
 
-    reviews_df = getDF('data/reviews_Electronics_5_first1000.json')
+
+    # define the name of the database
+    dbname = 'amazon_reviews'
+    username = 'plestran'
+    engine = create_engine('postgres://%s@localhost/%s'%(username,dbname))
+
+    ## create a database (if it doesn't exist)
+    if not database_exists(engine.url):
+        create_database(engine.url)
+
+    # Connect to make queries using psycopg2
+    con = psycopg2.connect(database = dbname, user = username)
+
+    # grab reviews for current product
+    sql_query = """
+        SELECT * FROM reviews
+        WHERE asin = '%s';
+        """ % test_asin
+    test_df = pd.read_sql_query(sql_query,con)
+
+    #reviews_df = getDF('data/reviews_Electronics_5_first1000.json')
 #    test_asin  = reviews_df['asin'].value_counts().idxmax()
-    test_df    = reviews_df[reviews_df['asin'] == test_asin].dropna()
+    #test_df    = reviews_df[reviews_df['asin'] == test_asin].dropna()
 
     # define the number features, topics, and how many
     # words/documents to display later on
     n_features      = 1000
-    n_topics        = min(int(test_df['reviewText'].size/2),10)
+    n_topics        = min(int(test_df['reviewText'].size/2),6)
     n_top_words     = 3
     n_top_documents = min(int(test_df['reviewText'].size/2),3)
 
     # Use tf-idf vectorizer
     vectorizer = TfidfVectorizer(max_features=n_features,
                                  tokenizer=tokenizeText,
-                                 stop_words='english', 
+                                 stop_words='english',
                                  ngram_range=(1,2),
                                  max_df=0.9, min_df=3)
 
@@ -225,10 +258,10 @@ def print_topics(test_asin):
     transform = pipe.fit_transform(test_df['reviewText'])
 
     # grab the topic words and avg polarities from the model
-    topics, reviews = return_topics(vectorizer, clf, transform, test_df, 
+    topics, reviews = return_topics(vectorizer, clf, transform, test_df,
                                     n_top_words, n_top_documents)
 
-    # summarize reviews 
+    # summarize reviews
     reviews = summarize_reviews(topics, reviews)
 
     return topics, reviews
@@ -237,7 +270,20 @@ def print_topics(test_asin):
 #------------------------------------------------------------------------------
 def in_db(asin):
 
-    reviews_df = getDF('data/reviews_Electronics_5_first1000.json')
+    # define the name of the database
+    dbname = 'amazon_reviews'
+    username = 'plestran'
+    engine = create_engine('postgres://%s@localhost/%s'%(username,dbname))
+
+    # Connect to make queries using psycopg2
+    con = psycopg2.connect(database = dbname, user = username)
+
+    # grab reviews for current product
+    sql_query = """
+        SELECT * FROM reviews
+        WHERE asin = '%s';
+        """ % asin
+    reviews_df = pd.read_sql_query(sql_query,con)
 
     return asin in reviews_df['asin'].tolist()
 #------------------------------------------------------------------------------

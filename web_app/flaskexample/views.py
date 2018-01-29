@@ -3,7 +3,7 @@ from flask import request
 from flask import jsonify
 
 from flaskexample import app
-from flaskexample.model import print_topics, in_db
+from flaskexample.model import print_topics, in_db, unique
 
 import pandas as pd
 
@@ -58,7 +58,12 @@ def display_topics():
 
     # get asin, topics, and reviews
     asin = request.args.get("asin")
-    topics, reviews = print_topics(asin)
+    if asin == '0972683275':
+        reviews = pd.read_csv('/home/ubuntu/application/flaskexample/0972683275_reviews.csv')
+        topics  = unique(reviews['topic_words'])
+        reviews = list(reviews.T.to_dict().values())
+    else:
+        topics, reviews = print_topics(asin)
 
     # append emojis showing the sentiment
     emoji_topics = []
