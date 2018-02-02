@@ -2,6 +2,7 @@
   "manifest_version": 2,
 
   "name": "Gefilter Fish",
+  "short_name": "Gefilter Fish",
   "description": "Cluster Amazon Reviews by Topics",
   "version": "0.0.0.4",
 

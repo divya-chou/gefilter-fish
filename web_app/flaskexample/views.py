@@ -59,7 +59,7 @@ def display_topics():
     # get asin, topics, and reviews
     asin = request.args.get("asin")
     if asin == '0972683275':
-        reviews = pd.read_csv('/home/ubuntu/application/flaskexample/0972683275_reviews.csv')
+        reviews = pd.read_csv('flaskexample/0972683275_reviews.csv')
         topics  = unique(reviews['topic_words'])
         reviews = list(reviews.T.to_dict().values())
     else:
@@ -91,5 +91,9 @@ def return_in_db():
     ''' Check if an ASIN is in our database '''
 
     asin = request.args.get("asin")
-    return jsonify( in_db( asin ) )
+
+    if asin == '0972683275':
+        return jsonify (True)
+    else:
+        return jsonify( in_db( asin ) )
 #------------------------------------------------------------------------------

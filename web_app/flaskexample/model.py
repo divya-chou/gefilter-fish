@@ -182,7 +182,11 @@ def summarize_reviews(topics, reviews):
         topic_words = topics[review['topic']].split()
         for sentence in sentences:
             if any(word in sentence.lower() for word in topic_words):
+                highlighted_sentence = '<span style="background-color: #FFFF00">'+sentence+'</span>'
+                summary.append(highlighted_sentence)
+            else:
                 summary.append(sentence)
+        print(summary)
 
         # save info for summarized reviews
         reviews[i]['summarized_reviewText'] = ' '.join([sent for sent in summary])
@@ -263,6 +267,7 @@ def print_topics(test_asin):
 
     # summarize reviews
     reviews = summarize_reviews(topics, reviews)
+    print(reviews)
 
     return topics, reviews
 #------------------------------------------------------------------------------
