@@ -58,8 +58,8 @@ def display_topics():
 
     # get asin, topics, and reviews
     asin = request.args.get("asin")
-    if asin == '0972683275':
-        reviews = pd.read_csv('flaskexample/0972683275_reviews.csv')
+    if asin == '0972683275' or asin == 'B0019EHU8G':
+        reviews = pd.read_csv('flaskexample/%s_reviews.csv' % asin)
         topics  = unique(reviews['topic_words'])
         reviews = list(reviews.T.to_dict().values())
     else:
@@ -92,7 +92,7 @@ def return_in_db():
 
     asin = request.args.get("asin")
 
-    if asin == '0972683275':
+    if asin == '0972683275' or asin == 'B0019EHU8G':
         return jsonify (True)
     else:
         return jsonify( in_db( asin ) )

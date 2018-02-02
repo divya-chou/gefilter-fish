@@ -193,6 +193,15 @@ def summarize_reviews(topics, reviews):
         vader = analyser.polarity_scores(reviews[i]['summarized_reviewText'])
         reviews[i]['summary_sentiment']     = vader['compound']
 
+        # add html for user rating
+        rating_html = ''
+        rating = int(reviews[i]['overall'])
+        for _ in range(rating):
+            rating_html += '<span class="fa fa-star checked"></span>'
+            for _ in range(rating,5):
+                rating_html += '<span class="fa fa-star"></span>'
+        reviews[i]['overall_html'] = rating_html
+
     return reviews
 #------------------------------------------------------------------------------
 
